@@ -27,4 +27,12 @@ var PositionError = require('./PositionError');
 // So we use additional map and own ids to return watch id synchronously.
 var pluginToNativeWatchMap = {};
 
-exec(function(success) {}, function(error) {}, "BackgroundLocationPlugin", "execute", []);
+module.exports = {
+	initModule = function(success, error){
+		exec(function() {
+				return 'Se inicializo el plugin';
+		}, function() {
+				return 'Error al inicializar el plugin';
+		}, "BackgroundLocationPlugin", "execute", []);
+	}
+}
