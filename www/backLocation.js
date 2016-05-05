@@ -20,6 +20,7 @@
 */
 
 var exec = cordova.require('cordova/exec');
+console.log('Exec: ' + exec);
 var utils = require('cordova/utils');
 var PositionError = require('./PositionError');
 
@@ -28,7 +29,7 @@ var PositionError = require('./PositionError');
 var pluginToNativeWatchMap = {};
 
 module.exports = {
-	initModule = function(){
-		exec(function() {}, function() {}, "BackgroundLocationPlugin", "execute", []);
+	initModule = function() {
+		exec(null, null, "BackgroundLocationPlugin", "execute", []);
 	}
 }
