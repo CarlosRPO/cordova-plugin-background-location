@@ -27,7 +27,7 @@
     <license>Apache 2.0</license>
     <keywords>cordova,location,background</keywords>
 
-    <js-module src="www/android/backLocation.js" name="backLocation">
+    <js-module src="www/backLocation.js" name="backLocation">
       <clobbers target="backLocation" />
     </js-module>
 
