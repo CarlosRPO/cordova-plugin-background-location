@@ -28,11 +28,7 @@ var PositionError = require('./PositionError');
 var pluginToNativeWatchMap = {};
 
 module.exports = {
-	initModule = function(success, error){
-		exec(function() {
-				return 'Se inicializo el plugin';
-		}, function() {
-				return 'Error al inicializar el plugin';
-		}, "BackgroundLocationPlugin", "execute", []);
+	initModule = function(){
+		exec(function() {}, function() {}, "BackgroundLocationPlugin", "execute", []);
 	}
 }
