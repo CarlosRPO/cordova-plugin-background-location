@@ -18,4 +18,8 @@ public class BackgroundLocationPlugin extends CordovaPlugin {
         cordova.getActivity().startService(servicio);
         return true;
     }
+
+    public String getMessage() {
+        return "Carlos Restrepo";
+    }
 }
