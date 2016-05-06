@@ -119,6 +119,11 @@ public class ServiceLocation extends Service implements LocationListener {
                                     params.put(key, value);
                                 }
                             }
+
+                            // Además de los parámetros recibidos se sincroniza la Latitud y Longitud
+                            params.put("latitud", latitude);
+                            params.put("longitud", longitude);
+
                             // Sincronización de localización
                             new ConsumirWS(params, args.get(URL_KEY)).execute();
                         }
