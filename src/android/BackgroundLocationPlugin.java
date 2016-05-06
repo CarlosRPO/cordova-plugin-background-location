@@ -8,6 +8,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 /**
  * Created by crestrepo on 5/5/2016.
  */
@@ -16,20 +20,19 @@ public class BackgroundLocationPlugin extends CordovaPlugin {
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
         try {
-            ServiceLocation sl = null;
-            if (args != null) {
+            Map<String, String> params = new HashMap<String, String>();
+            if (args != null && args.length() > 0) {
                 JSONObject obj = args.getJSONObject(0);
-                if (obj.has("url")) {
-                    String url = obj.getString("url");
-                    if (!url.isEmpty()) {
-                        sl = new ServiceLocation(url);
-                    }
+
+                Iterator<String> keysItr = obj.keys();
+                while (keysItr.hasNext()) {
+                    String key = keysItr.next();
+                    String value = (String) obj.get(key);
+                    params.put(key, value);
                 }
-            } else {
-                sl = new ServiceLocation();
             }
 
-            Intent servicio = new Intent(cordova.getActivity(), sl.getClass());
+            Intent servicio = new Intent(cordova.getActivity(), new ServiceLocation(params).getClass());
             cordova.getActivity().startService(servicio);
             callbackContext.success();
             return true;

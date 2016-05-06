@@ -1,24 +1,20 @@
 package co.com.ingeneo.backgroundlocation;
 
-import android.app.AlertDialog;
 import android.app.Service;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
-import android.provider.Settings;
 import android.util.Log;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -37,13 +33,102 @@ public class ServiceLocation extends Service implements LocationListener {
 
     private Handler mHandler = new Handler(Looper.getMainLooper());
 
-    private static final int SERVICE_FRECUENCY = 1000 * 10;
+    private static int SERVICE_FREQUENCY = 1000 * 60 * 3; // 3 minutos, frecuencia por defecto
+    private static final String FREQUENCY_KEY = "frequency";
+    private static final String URL_KEY = "url";
 
-    private static final String WIFI_TYPE_NAME = "wifi";
-    private static final String MOBILE_TYPE_NAME = "mobile";
+    private static Map<String, String> args;
 
-    private static String url = "";
+    public ServiceLocation(Map<String, String> args) {
+        super();
+        this.args = args;
 
+        // Recuperamos y establecemos la frecuencia de recuperación de localización
+        if (args != null && !args.isEmpty()) {
+            if (args.containsKey(FREQUENCY_KEY)) {
+                SERVICE_FREQUENCY = Integer.parseInt(args.get(FREQUENCY_KEY));
+            }
+        }
+    }
+
+    // Instancia del Servicio
+    public void onCreate() {
+        super.onCreate();
+        if (mContext == null) {
+            mContext = this;
+        }
+        // Iniciamos tarea de recupación de posiciones
+        startService();
+    }
+
+    // Creación de hilo que ejecuta el proceso
+    public void startService() {
+        try {
+            // Creamos el timer
+            timer = new Timer();
+            // Configuramos la tarea con la respectiva frecuencia
+            timer.scheduleAtFixedRate(new TimerTask() {
+                public void run() {
+                    executeTask();
+                }
+            }, 0, SERVICE_FREQUENCY);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        // Detenemos el servicio
+        stopService();
+    }
+
+    // Método que se encuarga de detener proceso de localización
+    public void stopService() {
+        try {
+            timer.cancel();
+            stopService(new Intent(mContext, this.getClass()));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Ejecución de la tarea
+    private void executeTask() {
+        mHandler.post(new Runnable() {
+            public void run() {
+                // Obtenemos localización
+                Location location = getLocation();
+                if (location != null) {
+                    // Recuperamos latitud
+                    String latitude = String.valueOf(location.getLatitude());
+                    // Recuperamos longitud
+                    String longitude = String.valueOf(location.getLongitude());
+
+                    // Verificación de conectividad a internet
+                    if (Util.isOnline(mContext)) {
+                        Map<String, String> params = new HashMap<String, String>();
+                        if (args != null && !args.isEmpty() && args.containsKey(URL_KEY)) {
+                            Iterator entries = args.entrySet().iterator();
+                            while (entries.hasNext()) {
+                                Map.Entry<String, String> thisEntry = (Map.Entry<String, String>) entries.next();
+                                String key = thisEntry.getKey();
+                                if (!key.equalsIgnoreCase(FREQUENCY_KEY) || !key.equalsIgnoreCase(URL_KEY)) {
+                                    String value = thisEntry.getValue();
+                                    params.put(key, value);
+                                }
+                            }
+                            // Sincronización de localización
+                            new ConsumirWS(params, args.get(URL_KEY)).execute();
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Método que se encarga de obtener la posición a través del GPS o a través de su conexión a internet
     public Location getLocation() {
         Location location = null;
         try {
@@ -87,133 +172,16 @@ public class ServiceLocation extends Service implements LocationListener {
         }
         return location;
     }
-/*
-    private Location getLocation(String provider) {
-        Location _location = null;
-        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-            if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                if (!locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-                    showSettingsAlert();
-                }
-            }
-        }
-        locationManager.requestLocationUpdates(provider, 1, 1, this);
-        if (locationManager != null) {
-            _location = locationManager.getLastKnownLocation(provider);
-        }
-        return _location;
-    }
-*/
-    /**
-     * Muestra el dialogo con el mensajes de solicitud de prender el gps
-     * */
-    public void showSettingsAlert() {
-        AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
-        alertDialog.setCancelable(false);
-        // Setting Dialog Title
-        alertDialog.setTitle("GPS is settings");
 
-        // Setting Dialog Message
-        alertDialog.setMessage("¿Desea activar el GPS?");
-
-        // On pressing Settings button
-        alertDialog.setPositiveButton("Aceptar", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int which) {
-                Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                startActivity(intent);
-            }
-        });
-
-        // on pressing cancel button
-        alertDialog.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.cancel();
-            }
-        });
-
-        // Showing Alert Message
-        alertDialog.show();
-    }
-
-    public void onCreate() {
-        super.onCreate();
-        if (mContext == null) {
-            mContext = this;
-        }
-        startService();
-    }
-
-    public ServiceLocation(String url) {
-        super();
-        this.url = url;
-    }
-
-    public ServiceLocation() {
-        super();
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        // Detenemos el servicio
-        stopService();
-    }
-
-    public void startService() {
-        try {
-            // Creamos el timer
-            timer = new Timer();
-            // Configuramos lo que tiene que hacer
-            timer.scheduleAtFixedRate(new TimerTask() {
-                public void run() {
-                    executeTask();
-                }
-            }, 0, SERVICE_FRECUENCY);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void stopService() {
-        try {
-            timer.cancel();
-            stopService(new Intent(mContext, this.getClass()));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void executeTask() {
-        mHandler.post(new Runnable() {
-            public void run() {
-                Location location = getLocation();
-                if (location != null) {
-                    String latitude = String.valueOf(location.getLatitude());
-                    String longitude = String.valueOf(location.getLongitude());
-                    Log.i("PLUGIN", latitude);
-                    Log.i("PLUGIN", longitude);
-
-                    if (isOnline(mContext)) {
-                        String imei = Util.getPhoneIMEI(mContext);
-                        // Sincronización de localización
-                        new ConsumirWS(imei, latitude, longitude).execute();
-                    }
-                }
-            }
-        });
-    }
-
+    // Tarea asincrona encargada de sincronizar las posiciones obtenidad a través del Web Service (URL) recibida como parámetro
     class ConsumirWS extends AsyncTask<Void, Void, String> {
 
-        String imei;
-        String latitude;
-        String longitude;
+        private Map<String, String> parametros;
+        private String url;
 
-        public ConsumirWS(String imei, String latitude, String longitude) {
-            this.imei = imei;
-            this.latitude = latitude;
-            this.longitude = longitude;
+        public ConsumirWS(Map<String, String> parametros, String url) {
+            this.parametros = parametros;
+            this.url = url;
         }
 
         @Override
@@ -224,16 +192,8 @@ public class ServiceLocation extends Service implements LocationListener {
         @Override
         protected String doInBackground(Void... params) {
             try {
-                Map<String, String> requestParams = new HashMap<String, String>();
-                //requestParams.put("imei", imei);
-                requestParams.put("latitud", latitude);
-                requestParams.put("longitud", longitude);
-
-                requestParams.put("cedula", imei);
-                requestParams.put("ruta", "5");
-                requestParams.put("distancia", "25");
-
-                return RestFullRequest.httpGetData(requestParams, url);
+                // Llamado al Web Service
+                return RestFullRequest.httpGetData(parametros, url);
             } catch (Exception e) {}
             return null;
         }
@@ -245,25 +205,8 @@ public class ServiceLocation extends Service implements LocationListener {
         }
     }
 
-    private boolean isOnline(Context contex) {
-        boolean hasConnectedWifi = false;
-        boolean hasConnectedMobile = false;
-        ConnectivityManager cm = (ConnectivityManager) contex
-                .getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo[] netInfo = cm.getAllNetworkInfo();
-        for (NetworkInfo ni : netInfo) {
-            if (ni.getTypeName().equalsIgnoreCase(WIFI_TYPE_NAME)) {
-                if (ni.isConnected()) {
-                    hasConnectedWifi = true;
-                }
-            } else if (ni.getTypeName().equalsIgnoreCase(MOBILE_TYPE_NAME)) {
-                if (ni.isConnected()) {
-                    hasConnectedMobile = true;
-                }
-            }
-        }
-        return hasConnectedWifi || hasConnectedMobile;
-    }
+
+
 
     public IBinder onBind(Intent intent) {
         return null;

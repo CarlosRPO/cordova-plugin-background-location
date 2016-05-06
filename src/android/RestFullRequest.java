@@ -1,5 +1,7 @@
 package co.com.ingeneo.backgroundlocation;
 
+import android.util.Log;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -60,13 +62,14 @@ public class RestFullRequest {
             response = sbResponse.toString();
 
         } catch (IllegalStateException e) {
+            e.printStackTrace();
         } catch (IOException e) {
+            e.printStackTrace();
         } catch (Exception e) {
+            e.printStackTrace();
         }finally {
             urlConnection.disconnect();
         }
-
         return response;
-
     }
 }
