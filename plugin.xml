@@ -42,6 +42,8 @@
 
         <source-file src="src/android/BackgroundLocationPlugin.java" target-dir="src/co/com/ingeneo/backgroundlocation" />
         <source-file src="src/android/ServiceLocation.java" target-dir="src/co/com/ingeneo/backgroundlocation" />
+        <source-file src="src/android/RestFullRequest.java" target-dir="src/co/com/ingeneo/backgroundlocation" />
+        <source-file src="src/android/Util.java" target-dir="src/co/com/ingeneo/backgroundlocation" />
     </platform>
 
     <!-- ios -->

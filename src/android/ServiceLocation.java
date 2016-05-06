@@ -8,6 +8,9 @@ import android.content.Intent;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -15,6 +18,8 @@ import android.os.Looper;
 import android.provider.Settings;
 import android.util.Log;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -32,7 +37,12 @@ public class ServiceLocation extends Service implements LocationListener {
 
     private Handler mHandler = new Handler(Looper.getMainLooper());
 
-    private static final int SERVICE_FRECUENCY = 1000 * 60 * 2; // 2 MINUTOS
+    private static final int SERVICE_FRECUENCY = 1000 * 10;
+
+    private static final String WIFI_TYPE_NAME = "wifi";
+    private static final String MOBILE_TYPE_NAME = "mobile";
+
+    private static String url = "";
 
     public Location getLocation() {
         Location location = null;
@@ -134,6 +144,16 @@ public class ServiceLocation extends Service implements LocationListener {
         startService();
     }
 
+    public ServiceLocation(String url) {
+        super();
+        this.url = url;
+    }
+
+    public ServiceLocation() {
+        super();
+    }
+
+    @Override
     public void onDestroy() {
         super.onDestroy();
         // Detenemos el servicio
@@ -158,6 +178,7 @@ public class ServiceLocation extends Service implements LocationListener {
     public void stopService() {
         try {
             timer.cancel();
+            stopService(new Intent(mContext, this.getClass()));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -168,12 +189,80 @@ public class ServiceLocation extends Service implements LocationListener {
             public void run() {
                 Location location = getLocation();
                 if (location != null) {
-                    Log.i("PLUGIN", String.valueOf(location.getLatitude()));
-                    Log.i("PLUGIN", String.valueOf(location.getLongitude()));
-                    // TODO: Implementación de envío de localización hacia el servidor
+                    String latitude = String.valueOf(location.getLatitude());
+                    String longitude = String.valueOf(location.getLongitude());
+                    Log.i("PLUGIN", latitude);
+                    Log.i("PLUGIN", longitude);
+
+                    if (isOnline(mContext)) {
+                        String imei = Util.getPhoneIMEI(mContext);
+                        // Sincronización de localización
+                        new ConsumirWS(imei, latitude, longitude).execute();
+                    }
                 }
             }
         });
+    }
+
+    class ConsumirWS extends AsyncTask<Void, Void, String> {
+
+        String imei;
+        String latitude;
+        String longitude;
+
+        public ConsumirWS(String imei, String latitude, String longitude) {
+            this.imei = imei;
+            this.latitude = latitude;
+            this.longitude = longitude;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected String doInBackground(Void... params) {
+            try {
+                Map<String, String> requestParams = new HashMap<String, String>();
+                //requestParams.put("imei", imei);
+                requestParams.put("latitud", latitude);
+                requestParams.put("longitud", longitude);
+
+                requestParams.put("cedula", imei);
+                requestParams.put("ruta", "5");
+                requestParams.put("distancia", "25");
+
+                return RestFullRequest.httpGetData(requestParams, url);
+            } catch (Exception e) {}
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String res) {
+            super.onPostExecute(null);
+            Log.i("PLUGIN: RESPONSE", res);
+        }
+    }
+
+    private boolean isOnline(Context contex) {
+        boolean hasConnectedWifi = false;
+        boolean hasConnectedMobile = false;
+        ConnectivityManager cm = (ConnectivityManager) contex
+                .getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo[] netInfo = cm.getAllNetworkInfo();
+        for (NetworkInfo ni : netInfo) {
+            if (ni.getTypeName().equalsIgnoreCase(WIFI_TYPE_NAME)) {
+                if (ni.isConnected()) {
+                    hasConnectedWifi = true;
+                }
+            } else if (ni.getTypeName().equalsIgnoreCase(MOBILE_TYPE_NAME)) {
+                if (ni.isConnected()) {
+                    hasConnectedMobile = true;
+                }
+            }
+        }
+        return hasConnectedWifi || hasConnectedMobile;
     }
 
     public IBinder onBind(Intent intent) {

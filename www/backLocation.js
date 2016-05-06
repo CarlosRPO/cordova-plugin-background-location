@@ -20,16 +20,13 @@
 */
 
 var exec = cordova.require('cordova/exec');
-console.log('Exec: ' + exec);
 var utils = require('cordova/utils');
-var PositionError = require('./PositionError');
 
 // Native watchPosition method is called async after permissions prompt.
 // So we use additional map and own ids to return watch id synchronously.
 var pluginToNativeWatchMap = {};
-
 module.exports = {
-	initModule = function() {
-		exec(null, null, "BackgroundLocationPlugin", "execute", []);
+	start: function(success, error, args) {
+		exec(success, error, "BackgroundLocationPlugin", "execute", args);
 	}
 }
