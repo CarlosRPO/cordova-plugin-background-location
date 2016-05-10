@@ -32,7 +32,9 @@ public class BackgroundLocationPlugin extends CordovaPlugin {
                 }
             }
 
-            Intent servicio = new Intent(cordova.getActivity(), new ServiceLocation(params).getClass());
+            ServiceLocation sl = new ServiceLocation(params);
+
+            Intent servicio = new Intent(cordova.getActivity(), sl.getClass());
             cordova.getActivity().startService(servicio);
             callbackContext.success();
             return true;

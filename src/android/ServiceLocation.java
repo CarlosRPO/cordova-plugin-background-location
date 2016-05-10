@@ -51,6 +51,10 @@ public class ServiceLocation extends Service implements LocationListener {
         }
     }
 
+    public ServiceLocation() {
+
+    }
+
     // Instancia del Servicio
     public void onCreate() {
         super.onCreate();
