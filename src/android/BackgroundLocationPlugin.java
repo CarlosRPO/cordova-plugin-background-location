@@ -45,8 +45,8 @@ public class BackgroundLocationPlugin extends CordovaPlugin {
     }
 
     @Override
-    public void onStop() {
-        super.onStop();
+    public void onDestroy() {
+        super.onDestroy();
         Intent servicio = new Intent(cordova.getActivity(), ServiceLocation.class);
         cordova.getActivity().stopService(servicio);
     }
