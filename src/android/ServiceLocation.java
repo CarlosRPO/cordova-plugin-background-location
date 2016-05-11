@@ -118,7 +118,7 @@ public class ServiceLocation extends Service implements LocationListener {
                             while (entries.hasNext()) {
                                 Map.Entry<String, String> thisEntry = (Map.Entry<String, String>) entries.next();
                                 String key = thisEntry.getKey();
-                                if (!key.equalsIgnoreCase(FREQUENCY_KEY) || !key.equalsIgnoreCase(URL_KEY)) {
+                                if (!key.equalsIgnoreCase(FREQUENCY_KEY) && !key.equalsIgnoreCase(URL_KEY)) {
                                     String value = thisEntry.getValue();
                                     params.put(key, value);
                                 }
