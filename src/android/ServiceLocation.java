@@ -142,9 +142,7 @@ public class ServiceLocation extends Service implements LocationListener {
         Location location = null;
         try {
             locationManager = (LocationManager) mContext.getSystemService(LOCATION_SERVICE);
-            if (locationManager != null) {
-                locationManager.removeUpdates(ServiceLocation.this);
-            }
+
             // getting GPS status
             isGPSEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
             if (isGPSEnabled) {
@@ -175,6 +173,10 @@ public class ServiceLocation extends Service implements LocationListener {
                         location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
                     }
                 }
+            }
+
+            if (locationManager != null) {
+                locationManager.removeUpdates(ServiceLocation.this);
             }
         } catch (Exception e) {
             e.printStackTrace();
