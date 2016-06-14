@@ -6,7 +6,7 @@ Plugin personalizado de Cordova para obtener geolocalización en Background y si
 
 # Instalación: 
 
-    cordova plugin add [URL]
+    cordova plugin add https://github.com/CarlosRPO/cordova-plugin-background-location
 
 # Iniciar:
 
